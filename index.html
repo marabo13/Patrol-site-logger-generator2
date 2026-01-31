@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCoJ Patrol Logger</title>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#0b0214;
+  color:#f7f2ff;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.box{
+  width:100%;
+  max-width:420px;
+  padding:20px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:16px;
+}
+h1{
+  margin:0 0 10px;
+  text-align:center;
+}
+label{
+  display:block;
+  margin-top:12px;
+  font-size:13px;
+  color:#cdb7ff;
+}
+input, select{
+  width:100%;
+  padding:10px;
+  margin-top:4px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.2);
+  background:#0b0114;
+  color:white;
+}
+button{
+  width:100%;
+  padding:14px;
+  margin-top:14px;
+  border:none;
+  border-radius:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+.start{background:#2ecc71;color:#071a10}
+.end{background:#e74c3c;color:#1a0000}
+#status{
+  margin-top:12px;
+  font-size:13px;
+  text-align:center;
+  color:#cdb7ff;
+}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+<div class="box">
+  <h1>DCoJ Patrol Logger</h1>
+
+  <label>Username</label>
+  <input id="username" placeholder="Your username">
+
+  <label>DCoJ Enforcement Rank</label>
+  <select id="rank">
+    <option value="">-- Select rank --</option>
+    <option>Arbiter</option>
+    <option>Quaestor</option>
+    <option>Praetor</option>
+    <option>Sanctor</option>
+    <option>Ast. Chief Arbiter</option>
+    <option>Chief Arbiter</option>
+  </select>
+
+  <div id="mentorBox" class="hidden">
+    <label>Supervised by (Quaestor Mentor)</label>
+    <input id="mentor" placeholder="Mentor username">
+  </div>
+
+  <button class="start" id="startBtn">🟢 START PATROL</button>
+  <button class="end" id="endBtn" disabled>🔴 END PATROL</button>
+
+  <div id="status"></div>
+</div>
+
+<script>
+const WEBHOOK_URL = https://discord.com/api/webhooks/1466900417362530518/4s-6jz06ayMUmn8wnbbf3vv6Ha-xYFWKwOCp0nrOQ_hTRPDGVCYUeMdZPZwa5eh2RzNR";
+
+const startBtn = document.getElementById("startBtn");
+const endBtn = document.getElementById("endBtn");
+const status = document.getElementById("status");
+const rank = document.getElementById("rank");
+const mentorBox = document.getElementById("mentorBox");
+
+let startTime = null;
+
+rank.onchange = () => {
+  mentorBox.classList.toggle("hidden", rank.value !== "Arbiter");
+};
+
+function formatDuration(ms){
+  const s = Math.floor(ms/1000);
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  const r = s%60;
+  if(h) return `${h}h ${m}m ${r}s`;
+  if(m) return `${m}m ${r}s`;
+  return `${r}s`;
+}
+
+async function sendEmbed(embed){
+  await fetch(WEBHOOK_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({embeds:[embed]})
+  });
+}
+
+startBtn.onclick = async () => {
+  const username = document.getElementById("username").value.trim();
+  const r = rank.value;
+  const mentor = document.getElementById("mentor").value.trim();
+
+  if(!username || !r){
+    status.textContent = "❌ Username and rank required.";
+    return;
+  }
+  if(r === "Arbiter" && !mentor){
+    status.textContent = "❌ Arbiter requires a Quaestor mentor.";
+    return;
+  }
+
+  startTime = new Date();
+
+  await sendEmbed({
+    title:"🟢 Patrol Started",
+    color:0x2ecc71,
+    fields:[
+      {name:"Officer",value:`**${username}**`,inline:true},
+      {name:"Rank",value:`**${r}**`,inline:true},
+      ...(r==="Arbiter"?[{name:"Supervised by",value:`**Quaestor ${mentor}**`}]:[]),
+      {name:"Start Time",value:`\`${startTime.toISOString()}\``}
+    ],
+    timestamp:startTime.toISOString()
+  });
+
+  startBtn.disabled = true;
+  endBtn.disabled = false;
+  status.textContent = "✅ Patrol started.";
+};
+
+endBtn.onclick = async () => {
+  const endTime = new Date();
+  const duration = formatDuration(endTime - startTime);
+
+  await sendEmbed({
+    title:"🔴 Patrol Ended",
+    color:0xe74c3c,
+    fields:[
+      {name:"Duration",value:`**${duration}**`}
+    ],
+    timestamp:endTime.toISOString()
+  });
+
+  startBtn.disabled = false;
+  endBtn.disabled = true;
+  status.textContent = "✅ Patrol ended.";
+};
+</script>
+</body>
+</html>
