@@ -1,181 +1,571 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>DCoJ Patrol Logger</title>
 
 <style>
-body{
-  margin:0;
-  font-family:system-ui;
-  background:#0b0214;
-  color:#f7f2ff;
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.box{
-  width:100%;
-  max-width:420px;
-  padding:20px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:16px;
-}
-h1{
-  margin:0 0 10px;
-  text-align:center;
-}
-label{
-  display:block;
-  margin-top:12px;
-  font-size:13px;
-  color:#cdb7ff;
-}
-input, select{
-  width:100%;
-  padding:10px;
-  margin-top:4px;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,.2);
-  background:#0b0114;
-  color:white;
-}
-button{
-  width:100%;
-  padding:14px;
-  margin-top:14px;
-  border:none;
-  border-radius:12px;
-  font-weight:800;
-  cursor:pointer;
-}
-.start{background:#2ecc71;color:#071a10}
-.end{background:#e74c3c;color:#1a0000}
-#status{
-  margin-top:12px;
-  font-size:13px;
-  text-align:center;
-  color:#cdb7ff;
-}
-.hidden{display:none}
+  :root{
+    --bg: #0b0214;
+    --panel: rgba(255,255,255,.06);
+    --panel2: rgba(255,255,255,.04);
+    --border: rgba(255,255,255,.14);
+    --text: #f7f2ff;
+    --muted: #cdb7ff;
+    --accent: #a66bff;
+    --good: #2ecc71;
+    --bad: #e74c3c;
+    --shadow: 0 18px 60px rgba(0,0,0,.55);
+  }
+
+  [data-theme="light"]{
+    --bg:#f6f4ff;
+    --panel: rgba(0,0,0,.04);
+    --panel2: rgba(0,0,0,.03);
+    --border: rgba(0,0,0,.12);
+    --text:#130b1f;
+    --muted:#4b3a73;
+    --accent:#6b33ff;
+    --shadow: 0 18px 60px rgba(20,10,40,.12);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background: var(--bg);
+    color: var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .wrap{
+    width:100%;
+    max-width: 620px;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .brand{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    min-width:0;
+  }
+
+  .logo{
+    width:44px;height:44px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background: radial-gradient(14px 14px at 30% 30%, rgba(111,219,255,.55) 0%, transparent 70%),
+                radial-gradient(14px 14px at 75% 65%, rgba(166,107,255,.65) 0%, transparent 70%),
+                linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    box-shadow: var(--shadow);
+    flex:0 0 auto;
+  }
+
+  h1{
+    margin:0;
+    font-size:20px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .sub{
+    margin:4px 0 0;
+    color: var(--muted);
+    font-size:13px;
+    line-height:1.35;
+  }
+
+  .panel{
+    border:1px solid var(--border);
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border-radius:18px;
+    box-shadow: var(--shadow);
+    padding:16px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+  }
+  @media (max-width: 560px){
+    .grid{ grid-template-columns:1fr; }
+  }
+
+  label{
+    display:block;
+    font-size:12px;
+    color: var(--muted);
+    margin: 10px 0 6px;
+  }
+
+  input, select, textarea{
+    width:100%;
+    padding:10px 10px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background: rgba(0,0,0,.12);
+    color: var(--text);
+    outline:none;
+  }
+  [data-theme="light"] input,
+  [data-theme="light"] select,
+  [data-theme="light"] textarea{
+    background: rgba(255,255,255,.7);
+  }
+
+  textarea{ min-height:84px; resize:vertical; }
+
+  .mentorRow{ display:none; }
+  .mentorRow.show{ display:block; }
+
+  .btnRow{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+    margin-top:12px;
+  }
+  @media (max-width: 560px){
+    .btnRow{ grid-template-columns:1fr; }
+  }
+
+  .btn{
+    padding:16px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    font-weight:900;
+    cursor:pointer;
+    font-size:14px;
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    transition: transform .06s ease, opacity .18s ease;
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+  .start{ background: linear-gradient(135deg, var(--good), #1e8f4f); color:#081b10; border:none; }
+  .end{ background: linear-gradient(135deg, var(--bad), #b53024); color:#200000; border:none; }
+  .ghost{ background: transparent; }
+
+  .status{
+    margin-top:12px;
+    color: var(--muted);
+    font-size:13px;
+    min-height:18px;
+  }
+  .live{
+    margin-top:6px;
+    color: var(--muted);
+    font-size:13px;
+  }
+
+  .toggle{
+    border:1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    padding:10px 12px;
+    border-radius:999px;
+    font-weight:800;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+
+  /* Modal */
+  .modalBack{
+    position:fixed; inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    background: rgba(0,0,0,.6);
+  }
+  .modal{
+    width:100%;
+    max-width:560px;
+    border-radius:18px;
+    border:1px solid var(--border);
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    box-shadow: var(--shadow);
+    padding:16px;
+  }
+  .modalHead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .x{
+    width:36px;height:36px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-weight:900;
+    cursor:pointer;
+  }
+  .modalBtns{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+  }
 </style>
 </head>
 
 <body>
-<div class="box">
-  <h1>DCoJ Patrol Logger</h1>
-
-  <label>Username</label>
-  <input id="username" placeholder="Your username">
-
-  <label>DCoJ Enforcement Rank</label>
-  <select id="rank">
-    <option value="">-- Select rank --</option>
-    <option>Arbiter</option>
-    <option>Quaestor</option>
-    <option>Praetor</option>
-    <option>Sanctor</option>
-    <option>Ast. Chief Arbiter</option>
-    <option>Chief Arbiter</option>
-  </select>
-
-  <div id="mentorBox" class="hidden">
-    <label>Supervised by (Quaestor Mentor)</label>
-    <input id="mentor" placeholder="Mentor username">
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div style="min-width:0">
+        <h1>DCoJ Patrol Logger</h1>
+        <div class="sub">GitHub Pages version • logs to Discord via webhook</div>
+      </div>
+    </div>
+    <button class="toggle" id="themeBtn">🌙 Dark</button>
   </div>
 
-  <button class="start" id="startBtn">🟢 START PATROL</button>
-  <button class="end" id="endBtn" disabled>🔴 END PATROL</button>
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <label for="username">Username</label>
+        <input id="username" placeholder="Your username" />
+      </div>
 
-  <div id="status"></div>
+      <div>
+        <label for="rank">DCoJ Enforcement Rank</label>
+        <select id="rank">
+          <option value="">-- Select rank --</option>
+          <option>Arbiter</option>
+          <option>Quaestor</option>
+          <option>Praetor</option>
+          <option>Sanctor</option>
+          <option>Ast. Chief Arbiter</option>
+          <option>Chief Arbiter</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mentorRow" id="mentorRow">
+      <label for="mentor">Supervised by (Quaestor Mentor) — required for Arbiter</label>
+      <input id="mentor" placeholder="Quaestor mentor username" />
+    </div>
+
+    <div class="btnRow">
+      <button class="btn start" id="startBtn">🟢 START PATROL</button>
+      <button class="btn end" id="endBtn" disabled>🔴 END PATROL</button>
+    </div>
+
+    <div class="btnRow" style="grid-template-columns:1fr;">
+      <button class="btn ghost" id="resetBtn">Reset / Clear</button>
+    </div>
+
+    <div class="status" id="status"></div>
+    <div class="live" id="live"></div>
+  </div>
+</div>
+
+<!-- END MODAL -->
+<div class="modalBack" id="endModalBack">
+  <div class="modal">
+    <div class="modalHead">
+      <b>End Patrol Details</b>
+      <button class="x" id="closeModal">✕</button>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label for="arrests">Arrest count</label>
+        <input id="arrests" type="number" min="0" step="1" value="0" />
+      </div>
+      <div>
+        <label for="attendeesShort">Attendees (comma separated)</label>
+        <input id="attendeesShort" placeholder="Name1, Name2, Name3" />
+      </div>
+    </div>
+
+    <label for="attendeesList">Attendees (optional list, one per line)</label>
+    <textarea id="attendeesList" placeholder="Name1&#10;Name2&#10;Name3"></textarea>
+
+    <div class="modalBtns">
+      <button class="btn ghost" id="cancelEnd">Cancel</button>
+      <button class="btn end" id="submitEnd">Submit End Patrol</button>
+    </div>
+
+    <div class="status" id="modalStatus"></div>
+  </div>
 </div>
 
 <script>
-const WEBHOOK_URL = https://discord.com/api/webhooks/1466900417362530518/4s-6jz06ayMUmn8wnbbf3vv6Ha-xYFWKwOCp0nrOQ_hTRPDGVCYUeMdZPZwa5eh2RzNR;
+/* =========================
+   CONFIG: PASTE WEBHOOK URL
+   ========================= */
+const WEBHOOK_URL = "PASTE_YOUR_DISCORD_WEBHOOK_URL_HERE";
 
-const startBtn = document.getElementById("startBtn");
-const endBtn = document.getElementById("endBtn");
-const status = document.getElementById("status");
-const rank = document.getElementById("rank");
-const mentorBox = document.getElementById("mentorBox");
-
-let startTime = null;
-
-rank.onchange = () => {
-  mentorBox.classList.toggle("hidden", rank.value !== "Arbiter");
+/* =========================
+   Storage keys
+   ========================= */
+const S = {
+  startISO: "dcoj_patrol_startISO",
+  username: "dcoj_patrol_username",
+  rank: "dcoj_patrol_rank",
+  mentor: "dcoj_patrol_mentor",
+  theme: "dcoj_patrol_theme"
 };
 
-function formatDuration(ms){
-  const s = Math.floor(ms/1000);
-  const h = Math.floor(s/3600);
-  const m = Math.floor((s%3600)/60);
-  const r = s%60;
-  if(h) return `${h}h ${m}m ${r}s`;
-  if(m) return `${m}m ${r}s`;
-  return `${r}s`;
+const $ = (id) => document.getElementById(id);
+
+function save(k,v){ localStorage.setItem(k, v); }
+function load(k){ return localStorage.getItem(k); }
+function del(k){ localStorage.removeItem(k); }
+
+function fmtDuration(ms){
+  ms = Math.max(0, ms);
+  const sec = Math.floor(ms/1000);
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  if (h) return `${h}h ${m}m ${s}s`;
+  if (m) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
-async function sendEmbed(embed){
-  await fetch(WEBHOOK_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({embeds:[embed]})
+function parseAttendees(shortText, listText){
+  const out = [];
+  if (shortText.trim()){
+    shortText.split(",").map(x=>x.trim()).filter(Boolean).forEach(x=>out.push(x));
+  }
+  if (listText.trim()){
+    listText.split("\n").map(x=>x.trim()).filter(Boolean).forEach(x=>out.push(x));
+  }
+  return [...new Set(out)];
+}
+
+function setStatus(msg){ $("status").textContent = msg; }
+function setModalStatus(msg){ $("modalStatus").textContent = msg; }
+
+function isOnPatrol(){ return !!load(S.startISO); }
+
+function refreshUI(){
+  const r = $("rank").value;
+  $("mentorRow").classList.toggle("show", r === "Arbiter");
+
+  const on = isOnPatrol();
+  $("startBtn").disabled = on;
+  $("endBtn").disabled = !on;
+
+  if (on){
+    const startISO = load(S.startISO);
+    const dur = fmtDuration(Date.now() - new Date(startISO).getTime());
+    $("live").textContent = `On patrol since ${startISO} • Duration: ${dur}`;
+  } else {
+    $("live").textContent = "Not currently on patrol.";
+  }
+}
+
+function setTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  save(S.theme, theme);
+  $("themeBtn").textContent = theme === "light" ? "☀️ Light" : "🌙 Dark";
+}
+
+$("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme") || "dark";
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+
+/* =========================
+   Discord send (GitHub Pages-safe)
+   - mode: no-cors
+   - Content-Type: text/plain
+   This avoids the CORS preflight that usually breaks Discord webhooks from browsers.
+   ========================= */
+async function sendDiscordEmbed(embed){
+  if (!WEBHOOK_URL || WEBHOOK_URL.includes("PASTE_")) {
+    throw new Error("Webhook URL not set.");
+  }
+
+  // NOTE: no-cors => we can't read success/failure response.
+  // This still sends the request in most browsers.
+  await fetch(WEBHOOK_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain" }, // simple request
+    body: JSON.stringify({ embeds: [embed] })
   });
 }
 
-startBtn.onclick = async () => {
-  const username = document.getElementById("username").value.trim();
-  const r = rank.value;
-  const mentor = document.getElementById("mentor").value.trim();
+/* =========================
+   Start Patrol
+   ========================= */
+$("startBtn").addEventListener("click", async () => {
+  const username = $("username").value.trim();
+  const rank = $("rank").value;
+  const mentor = $("mentor").value.trim();
 
-  if(!username || !r){
-    status.textContent = "❌ Username and rank required.";
+  if (!username || !rank){
+    setStatus("❌ Please enter username and rank.");
     return;
   }
-  if(r === "Arbiter" && !mentor){
-    status.textContent = "❌ Arbiter requires a Quaestor mentor.";
+  if (rank === "Arbiter" && !mentor){
+    setStatus("❌ Arbiter requires a Quaestor mentor username.");
     return;
   }
 
-  startTime = new Date();
+  const startISO = new Date().toISOString();
 
-  await sendEmbed({
-    title:"🟢 Patrol Started",
-    color:0x2ecc71,
-    fields:[
-      {name:"Officer",value:`**${username}**`,inline:true},
-      {name:"Rank",value:`**${r}**`,inline:true},
-      ...(r==="Arbiter"?[{name:"Supervised by",value:`**Quaestor ${mentor}**`}]:[]),
-      {name:"Start Time",value:`\`${startTime.toISOString()}\``}
-    ],
-    timestamp:startTime.toISOString()
-  });
+  save(S.startISO, startISO);
+  save(S.username, username);
+  save(S.rank, rank);
+  save(S.mentor, mentor);
 
-  startBtn.disabled = true;
-  endBtn.disabled = false;
-  status.textContent = "✅ Patrol started.";
-};
+  setStatus("Sending START log to Discord...");
 
-endBtn.onclick = async () => {
-  const endTime = new Date();
-  const duration = formatDuration(endTime - startTime);
+  const fields = [
+    { name: "Officer", value: `**${username}**`, inline: true },
+    { name: "Rank", value: `**${rank}**`, inline: true },
+    { name: "Start", value: `\`${startISO}\``, inline: false }
+  ];
 
-  await sendEmbed({
-    title:"🔴 Patrol Ended",
-    color:0xe74c3c,
-    fields:[
-      {name:"Duration",value:`**${duration}**`}
-    ],
-    timestamp:endTime.toISOString()
-  });
+  if (rank === "Arbiter"){
+    fields.splice(2,0,{ name: "Supervised by", value: `**Quaestor ${mentor}**`, inline: false });
+  }
 
-  startBtn.disabled = false;
-  endBtn.disabled = true;
-  status.textContent = "✅ Patrol ended.";
-};
+  const embed = {
+    author: { name: "DCoJ Patrol Logger" },
+    title: "🟢 Patrol Started",
+    color: 0x2ecc71,
+    fields,
+    timestamp: startISO,
+    footer: { text: "GitHub Pages webhook logger" }
+  };
+
+  try{
+    await sendDiscordEmbed(embed);
+    setStatus("✅ Start sent! (If your webhook is correct, it will appear in Discord.)");
+  }catch(e){
+    del(S.startISO);
+    setStatus("❌ " + e.message);
+  }
+  refreshUI();
+});
+
+/* =========================
+   End Patrol Modal
+   ========================= */
+function openEndModal(){
+  $("endModalBack").style.display = "flex";
+  $("arrests").value = "0";
+  $("attendeesShort").value = "";
+  $("attendeesList").value = "";
+  setModalStatus("");
+}
+function closeEndModal(){
+  $("endModalBack").style.display = "none";
+}
+
+$("endBtn").addEventListener("click", openEndModal);
+$("closeModal").addEventListener("click", closeEndModal);
+$("cancelEnd").addEventListener("click", closeEndModal);
+
+$("submitEnd").addEventListener("click", async () => {
+  if (!isOnPatrol()){
+    setModalStatus("❌ No patrol started.");
+    return;
+  }
+
+  const username = load(S.username) || $("username").value.trim();
+  const rank = load(S.rank) || $("rank").value;
+  const mentor = load(S.mentor) || $("mentor").value.trim();
+
+  const startISO = load(S.startISO);
+  const endISO = new Date().toISOString();
+  const durationText = fmtDuration(new Date(endISO) - new Date(startISO));
+
+  const arrests = Math.max(0, parseInt($("arrests").value || "0", 10) || 0);
+  const attendees = parseAttendees($("attendeesShort").value, $("attendeesList").value);
+
+  setModalStatus("Sending END log to Discord...");
+
+  // Always show attendees safely (Discord embed field limit)
+  let attendeesText = attendees.length ? attendees.map(a => `• ${a}`).join("\n") : "None";
+  if (attendeesText.length > 1000) attendeesText = attendeesText.slice(0, 1000) + "\n…";
+
+  const fields = [
+    { name: "Officer", value: `**${username}**`, inline: true },
+    { name: "Rank", value: `**${rank}**`, inline: true },
+    { name: "Start", value: `\`${startISO}\``, inline: false },
+    { name: "End", value: `\`${endISO}\``, inline: false },
+    { name: "Duration", value: `**${durationText}**`, inline: true },
+    { name: "Arrests", value: `**${arrests}**`, inline: true },
+    { name: "Attendees", value: attendeesText, inline: false }
+  ];
+
+  if (rank === "Arbiter"){
+    fields.splice(2,0,{ name: "Supervised by", value: mentor ? `**Quaestor ${mentor}**` : "**Missing**", inline: false });
+  }
+
+  const embed = {
+    author: { name: "DCoJ Patrol Logger" },
+    title: "🔴 Patrol Ended",
+    color: 0xe74c3c,
+    fields,
+    timestamp: endISO,
+    footer: { text: "GitHub Pages webhook logger" }
+  };
+
+  try{
+    await sendDiscordEmbed(embed);
+    del(S.startISO);
+    setStatus(`✅ End sent! Duration: ${durationText}`);
+    closeEndModal();
+  }catch(e){
+    setModalStatus("❌ " + e.message);
+  }
+  refreshUI();
+});
+
+/* =========================
+   Reset
+   ========================= */
+$("resetBtn").addEventListener("click", () => {
+  del(S.startISO); del(S.username); del(S.rank); del(S.mentor);
+  $("username").value = "";
+  $("rank").value = "";
+  $("mentor").value = "";
+  setStatus("Cleared.");
+  refreshUI();
+});
+
+/* =========================
+   Init
+   ========================= */
+$("rank").addEventListener("change", refreshUI);
+
+// load saved fields if any
+$("username").value = load(S.username) || "";
+$("rank").value = load(S.rank) || "";
+$("mentor").value = load(S.mentor) || "";
+
+// theme init
+setTheme(load(S.theme) || "dark");
+
+refreshUI();
+setInterval(refreshUI, 1000);
 </script>
 </body>
 </html>
